@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        #text-display {
+            font-size: 20px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: left;
+            line-height: 1.6;
+            min-height: 120px;
+        }
+        #text-display span.correct {
+            color: green;
+        }
+        #text-display span.incorrect {
+            color: red;
+            text-decoration: underline;
+        }
+        #text-display span.current {
+            background-color: #ffff99;
+        }
+        #typing-area {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            resize: none;
+        }
+        #typing-area:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 0 5px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+        .stat-box {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            min-width: 120px;
+        }
+        .stat-box h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        #timer {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        #history {
+            margin-top: 30px;
+            text-align: left;
+        }
+        #history h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .history-entry:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Typing Speed Test</h1>
+        
+        <div id="timer">60</div>
+        
+        <div id="text-display">Click "Start Test" to begin typing...</div>
+        
+        <textarea id="typing-area" placeholder="Start typing here when the test begins..." disabled></textarea>
+        
+        <div>
+            <button id="start-btn">Start Test</button>
+            <button id="reset-btn" disabled>Reset</button>
+        </div>
+        
+        <div id="stats">
+            <div class="stat-box">
+                <h3>WPM</h3>
+                <div class="stat-value" id="wpm">0</div>
+            </div>
+            <div class="stat-box">
+                <h3>CPM</h3>
+                <div class="stat-value" id="cpm">0</div>
+            </div>
+            <div class="stat-box">
+                <h3>Accuracy</h3>
+                <div class="stat-value" id="accuracy">0%</div>
+            </div>
+        </div>
+        
+        <div id="history">
+            <h2>Test History</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Date</th>
+                        <th>WPM</th>
+                        <th>CPM</th>
+                        <th>Accuracy</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        
+        const sampleTexts = [
+            "meow cat dog kittens are yummy puppies cute purple white pink rainbow red orange coquette bow gray black",
+            "doll cherry lush bunny glitter blush rosy pearl tutu cupcake bambi cake flowers daisy sugar rose",
+            "ribbons ballet girly lollipop star light honey glow velvet satin bubbles dreamy angel moonbeam",
+            "fluffy sparkly gorgeous happy princess love charming sweetie darling cutie pie",
+            "dream sparkle glow shine love magic bliss hope light peace joy"
+        ];
+        
+       
+        const textDisplay = document.getElementById('text-display');
+        const typingArea = document.getElementById('typing-area');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const timerElement = document.getElementById('timer');
+        const wpmElement = document.getElementById('wpm');
+        const cpmElement = document.getElementById('cpm');
+        const accuracyElement = document.getElementById('accuracy');
+        const historyBody = document.getElementById('history-body');
+        
+        // Variables
+        let timer;
+        let timeLeft = 60;
+        let isTestActive = false;
+        let startTime;
+        let currentTextIndex;
+        let mistakes = 0;
+        let correctChars = 0;
+        let testHistory = JSON.parse(localStorage.getItem('typingTestHistory')) || [];
+        
+        // Initialize
+        displayHistory();
+        
+        // Event listeners
+        startBtn.addEventListener('click', startTest);
+        resetBtn.addEventListener('click', resetTest);
+        typingArea.addEventListener('input', checkTyping);
+        
+        // Functions
+        function startTest() {
+            if (isTestActive) return;
+            
+            isTestActive = true;
+            startBtn.disabled = true;
+            resetBtn.disabled = false;
+            typingArea.disabled = false;
+            typingArea.value = '';
+            typingArea.focus();
+            
+            // Select random text
+            currentTextIndex = Math.floor(Math.random() * sampleTexts.length);
+            const textToType = sampleTexts[currentTextIndex];
+            
+            // Display text with spans for each character
+            textDisplay.innerHTML = '';
+            textToType.split('').forEach(char => {
+                const span = document.createElement('span');
+                span.textContent = char;
+                textDisplay.appendChild(span);
+            });
+            
+            // Highlight first character
+            textDisplay.children[0].classList.add('current');
+            
+            // Reset counters
+            mistakes = 0;
+            correctChars = 0;
+            timeLeft = 60;
+            timerElement.textContent = timeLeft;
+            
+            // Start timer
+            startTime = new Date();
+            timer = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endTest();
+                }
+            }, 1000);
+        }
+        
+        function resetTest() {
+            if (timer) clearInterval(timer);
+            
+            isTestActive = false;
+            startBtn.disabled = false;
+            resetBtn.disabled = true;
+            typingArea.disabled = true;
+            typingArea.value = '';
+            
+            textDisplay.innerHTML = "Click \"Start Test\" to begin typing...";
+            timerElement.textContent = '60';
+            wpmElement.textContent = '0';
+            cpmElement.textContent = '0';
+            accuracyElement.textContent = '0%';
+        }
+        
+        function checkTyping() {
+            if (!isTestActive) return;
+            
+            const typedText = typingArea.value;
+            const textChars = textDisplay.children;
+            
+            // Reset all styling
+            for (let i = 0; i < textChars.length; i++) {
+                textChars[i].className = '';
+            }
+            
+            // Apply styling based on typing
+            correctChars = 0;
+            mistakes = 0;
+            
+            for (let i = 0; i < typedText.length; i++) {
+                if (i < textChars.length) {
+                    if (typedText[i] === textChars[i].textContent) {
+                        textChars[i].classList.add('correct');
+                        correctChars++;
+                    } else {
+                        textChars[i].classList.add('incorrect');
+                        mistakes++;
+                    }
+                }
+            }
+            
+            // Highlight current character
+            if (typedText.length < textChars.length) {
+                textChars[typedText.length].classList.add('current');
+            }
+            
+            // Calculate and update stats
+            const timeElapsed = (new Date() - startTime) / 1000 / 60; // in minutes
+            const wordsTyped = typedText.trim().split(/\s+/).length;
+            const charsTyped = typedText.length;
+            
+            // WPM calculation
+            const wpm = Math.round(wordsTyped / timeElapsed);
+            wpmElement.textContent = isFinite(wpm) ? wpm : 0;
+            
+            // CPM calculation
+            const cpm = Math.round(charsTyped / timeElapsed);
+            cpmElement.textContent = isFinite(cpm) ? cpm : 0;
+            
+            // Accuracy calculation
+            const accuracy = Math.round((correctChars / (correctChars + mistakes)) * 100);
+            accuracyElement.textContent = isFinite(accuracy) ? accuracy + '%' : '0%';
+            
+            // Check if test is complete (all text typed)
+            if (typedText.length >= textChars.length) {
+                endTest();
+            }
+        }
+        
+        function endTest() {
+            clearInterval(timer);
+            isTestActive = false;
+            typingArea.disabled = true;
+            startBtn.disabled = false;
+            
+            // Calculate final stats
+            const timeElapsed = Math.min(60, 60 - timeLeft) / 60; // in minutes
+            const wordsTyped = typingArea.value.trim().split(/\s+/).length;
+            const charsTyped = typingArea.value.length;
+            
+            const wpm = Math.round(wordsTyped / timeElapsed);
+            const cpm = Math.round(charsTyped / timeElapsed);
+            const accuracy = Math.round((correctChars / (correctChars + mistakes)) * 100);
+            
+            wpmElement.textContent = isFinite(wpm) ? wpm : 0;
+            cpmElement.textContent = isFinite(cpm) ? cpm : 0;
+            accuracyElement.textContent = isFinite(accuracy) ? accuracy + '%' : '0%';
+            
+            // Save to history
+            const testResult = {
+                date: new Date().toLocaleString(),
+                wpm: isFinite(wpm) ? wpm : 0,
+                cpm: isFinite(cpm) ? cpm : 0,
+                accuracy: isFinite(accuracy) ? accuracy : 0
+            };
+            
+            testHistory.unshift(testResult);
+            if (testHistory.length > 10) testHistory.pop(); // Keep only last 10 tests
+            
+            localStorage.setItem('typingTestHistory', JSON.stringify(testHistory));
+            displayHistory();
+            
+            // Send results to server
+            sendResultsToServer(testResult);
+        }
+        
+        function displayHistory() {
+            historyBody.innerHTML = '';
+            
+            testHistory.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                row.classList.add('history-entry');
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${entry.date}</td>
+                    <td>${entry.wpm}</td>
+                    <td>${entry.cpm}</td>
+                    <td>${entry.accuracy}%</td>
+                `;
+                
+                historyBody.appendChild(row);
+            });
+        }
+        
+        function sendResultsToServer(result) {
+            // This function would normally send results to the Java backend
+            // Using fetch API to send data to the backend
+            fetch('/api/typing-test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(result)
+            })
+            .then(response => response.json())
+            .then(data => console.log('Success:', data))
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
