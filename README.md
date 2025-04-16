@@ -20,9 +20,9 @@ This is a **Typing Speed Test** web application that allows users to test their 
 
 ## What I Worked On
 Developed the core typing test logic using JavaScript.
-Assisted with the Spring Boot integration and Maven setup for managing project dependencies and running the application.
+Collaborated with teammates who worked on Spring Boot and Maven; observed how the backend and dependency management were handled.
 
 ## Learning Areas
-While I had prior experience with Java, I learned the basics of Spring Boot and Maven during the project.
-Currently working on improving my understanding of backend frameworks and dependency management.
+Got exposure to how Spring Boot and Maven are used in real projects, though I’m still in the early stages of learning them.
+Currently exploring backend frameworks and tools like Maven to better understand how they support full-stack development.
 
